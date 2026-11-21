@@ -1,0 +1,302 @@
+@import 'tailwindcss';
+
+/*
+  Font được nạp bằng <link rel="preconnect"> + <link rel="stylesheet"> trong index.html
+  (nhanh hơn @import trong CSS vì không chặn việc phân tích stylesheet).
+*/
+
+:root {
+  --bg-0: #07080c; --bg-1: #0d0f16; --bg-2: #141824;
+  --line: rgba(255,255,255,.08);
+  --text-0: #f5f7fb; --text-1: #a7afc2; --text-2: #8089a0;
+  --accent: #5b8cff; --accent-2: #8b5cf6; --hot: #ff6a3d; --lime: #c6ff3d;
+  --ok: #3ddc97; --warn: #ffb547; --danger: #ff6b6b;
+  --soft: rgba(255,255,255,.04);
+  --brand-tint: rgba(91,140,255,.14);
+  --grad-brand: linear-gradient(135deg, #5b8cff 0%, #8b5cf6 55%, #ff6a3d 100%);
+  --glow: 0 0 0 1px var(--line), 0 20px 60px -20px rgba(91,140,255,.45);
+  --radius-lg: 28px; --radius-md: 18px; --radius-sm: 12px;
+  --ease: cubic-bezier(.2,.7,.2,1);
+  /* Panel luôn tối ở cả hai giao diện (sidebar quản trị, khung giới thiệu ở trang tài khoản) */
+  --panel: #0b0d14; --panel-ink: #f5f7fb;
+  color-scheme: dark;
+}
+:root[data-theme='light'] {
+  --bg-0: #f4f6fb; --bg-1: #ffffff; --bg-2: #eaeef6;
+  --line: rgba(13,18,32,.1);
+  --text-0: #0d1220; --text-1: #4a5369; --text-2: #5f6880;
+  --accent: #3a6af0; --accent-2: #7c4ddb; --hot: #e8532a; --lime: #b5f02a;
+  --ok: #0f8a58; --warn: #b36b00; --danger: #d63c3c;
+  --soft: rgba(13,18,32,.04);
+  --brand-tint: rgba(58,106,240,.1);
+  --glow: 0 0 0 1px var(--line), 0 20px 50px -24px rgba(58,106,240,.35);
+  color-scheme: light;
+}
+
+@theme inline {
+  --font-sans: 'Be Vietnam Pro', ui-sans-serif, system-ui, sans-serif;
+  --font-display: 'Space Grotesk', 'Be Vietnam Pro', sans-serif;
+  --font-mono: 'Space Grotesk', 'Be Vietnam Pro', sans-serif;
+  --color-surface: var(--bg-1);
+  --color-surface-2: var(--bg-2);
+  --color-page: var(--bg-0);
+  --color-ink: var(--text-0);
+  --color-ink-2: var(--text-1);
+  --color-ink-3: var(--text-2);
+  --color-line: var(--line);
+  --color-subtle: var(--soft);
+  --color-brand-50: var(--brand-tint);
+  --color-brand-600: var(--accent);
+  --color-brand-700: var(--accent);
+  --color-accent-2: var(--accent-2);
+  --color-navy: var(--bg-1);
+  --color-panel: var(--panel);
+  --color-panel-ink: var(--panel-ink);
+  --color-sale: var(--hot);
+  --color-hot: var(--hot);
+  --color-lime: var(--lime);
+  --color-ok: var(--ok);
+  --color-warn: var(--warn);
+  --color-danger: var(--danger);
+  --shadow-card: 0 1px 0 rgba(255,255,255,.04) inset, 0 20px 50px -30px rgba(0,0,0,.6);
+  --shadow-card-hover: var(--glow);
+}
+
+/* =========================================================================
+   BASE — element selectors. Nằm trong @layer base để utility của Tailwind luôn ghi đè được.
+   ========================================================================= */
+@layer base {
+  /* icon không bao giờ bị flexbox bóp về 0px (lỗi thấy ở nút "Thêm vào giỏ" trên mobile) */
+  svg { flex-shrink: 0; }
+  html { scroll-behavior: smooth; overflow-x: clip; scrollbar-gutter: stable; }
+  body { font-family: var(--font-sans); color: var(--text-0); background: var(--bg-0); font-size: 15px; line-height: 1.55; -webkit-font-smoothing: antialiased; overflow-x: clip; }
+  h1, h2, h3 { font-family: var(--font-display); letter-spacing: -.03em; text-wrap: balance; }
+  p { text-wrap: pretty; }
+  button { cursor: pointer; }
+  /* phản hồi khi nhấn cho mọi nút (dùng thuộc tính `scale` riêng nên không đụng tới transform của Tailwind) */
+  button:not(.btn):not(:disabled):active { scale: .92; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+  ::selection { background: var(--accent); color: #fff; }
+  img { max-width: 100%; }
+  /* khoá cuộn nền khi có hộp thoại mở (thay cho JS) */
+  html:has(dialog[open]) { overflow: hidden; }
+}
+
+/* =========================================================================
+   COMPONENTS — các class tự đặt. Trước đây nằm ngoài @layer nên luôn thắng utility
+   (vd. `.container-x` làm mất `py-*`, `.input` làm mất `pl-*`/`h-*`/`rounded-*`).
+   ========================================================================= */
+@layer components {
+  .container-x { max-width: 1280px; margin: 0 auto; padding: 0 clamp(16px, 4vw, 48px); }
+  .section-gap { margin-top: clamp(80px, 12vw, 160px); }
+  .num { font-family: var(--font-display); font-variant-numeric: tabular-nums; }
+  .display { font-family: var(--font-display); letter-spacing: -.04em; line-height: .95; font-weight: 700; }
+  .h-section { font-family: var(--font-display); font-size: clamp(2rem, 4vw, 3.5rem); letter-spacing: -.03em; line-height: 1.02; font-weight: 700; }
+  .eyebrow { font-family: var(--font-display); font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: var(--text-1); }
+
+  .text-outline { -webkit-text-stroke: 1.5px var(--text-0); color: transparent; }
+  .text-grad { background: var(--grad-brand); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .glass { background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02)); border: 1px solid var(--line); backdrop-filter: blur(16px) saturate(140%); border-radius: var(--radius-lg); box-shadow: var(--glow); }
+  :root[data-theme='light'] .glass { background: rgba(255,255,255,.7); }
+
+  .btn { position: relative; overflow: hidden; display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 44px; padding: 0 22px; border-radius: 999px; font-weight: 600; font-size: 14px; transition: transform .2s var(--ease), box-shadow .2s var(--ease), background .2s, border-color .2s; cursor: pointer; white-space: nowrap; }
+  .btn:active:not(:disabled) { transform: scale(.97); }
+  .btn:disabled { opacity: .45; cursor: not-allowed; }
+  .btn-primary { background: var(--grad-brand); color: #fff; box-shadow: 0 10px 40px -12px rgba(91,140,255,.8); }
+  .btn-primary::after { content: ""; position: absolute; top: 0; left: -120%; width: 60%; height: 100%; background: linear-gradient(100deg, transparent, rgba(255,255,255,.5), transparent); transform: skewX(-20deg); transition: left .6s var(--ease); pointer-events: none; }
+  .btn-primary:hover:not(:disabled)::after { left: 140%; }
+  .btn-secondary { background: var(--soft); color: var(--text-0); border: 1px solid var(--line); backdrop-filter: blur(10px); }
+  .btn-secondary:hover:not(:disabled) { background: var(--brand-tint); border-color: var(--accent); }
+  .btn-danger { background: transparent; color: var(--danger); border: 1px solid color-mix(in srgb, var(--danger) 45%, transparent); }
+  .btn-danger:hover:not(:disabled) { background: color-mix(in srgb, var(--danger) 14%, transparent); }
+  .btn-hot { background: var(--danger); color: #fff; }
+  .btn-sm { height: 36px; padding: 0 16px; }
+  .btn-lg { height: 52px; padding: 0 30px; font-size: 15px; }
+
+  .input { width: 100%; height: 46px; border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 0 14px; background: var(--soft); color: var(--text-0); transition: border-color .2s, box-shadow .2s, background .2s; }
+  .input::placeholder { color: var(--text-2); }
+  .input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 25%, transparent); background: var(--bg-1); }
+  .input[aria-invalid='true'] { border-color: var(--danger); }
+  select.input option { background: var(--bg-1); color: var(--text-0); }
+  textarea.input { height: auto; min-height: 96px; padding-top: 12px; padding-bottom: 12px; }
+  .card { background: var(--bg-1); border: 1px solid var(--line); border-radius: var(--radius-md); }
+  .label { display: block; font-size: 13px; font-weight: 500; margin-bottom: 6px; color: var(--text-1); }
+  .err { color: var(--danger); font-size: 12px; margin-top: 4px; }
+  .skeleton { background: linear-gradient(90deg, var(--soft) 25%, rgba(255,255,255,.09) 50%, var(--soft) 75%); background-size: 200% 100%; animation: sk 1.2s infinite; border-radius: 12px; }
+  .chip { position: relative; overflow: hidden; display: inline-flex; align-items: center; gap: 6px; height: 34px; padding: 0 14px; border-radius: 999px; font-size: 13px; font-weight: 500; border: 1px solid var(--line); background: var(--soft); color: var(--text-1); transition: background .2s, border-color .2s, color .2s; white-space: nowrap; }
+  .chip:hover { border-color: var(--accent); color: var(--text-0); }
+  .chip[aria-pressed='true'] { background: var(--brand-tint); border-color: var(--accent); color: var(--accent); }
+  .kbd { font-family: var(--font-display); font-size: 11px; border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 6px; padding: 1px 6px; color: var(--text-2); background: var(--soft); }
+}
+
+/* =========================================================================
+   NỀN: aurora + nhiễu hạt
+   - Lớp ngoài cắt overflow nên animation scale không còn làm trang tràn ngang.
+   - Bỏ filter: blur() trên lớp full-màn hình (gradient radial vốn đã mềm) -> mượt hơn nhiều trên máy yếu.
+   ========================================================================= */
+.aurora { position: fixed; inset: 0; z-index: -2; pointer-events: none; overflow: hidden; contain: strict; }
+.aurora::before { content: ""; position: absolute; inset: -12%; will-change: transform; animation: drift 18s ease-in-out infinite alternate;
+  background:
+    radial-gradient(40% 40% at 20% 10%, rgba(91,140,255,.28), transparent 70%),
+    radial-gradient(35% 35% at 85% 20%, rgba(139,92,246,.22), transparent 70%),
+    radial-gradient(30% 30% at 60% 90%, rgba(255,106,61,.14), transparent 70%); }
+:root[data-theme='light'] .aurora { opacity: .45; }
+@keyframes drift { to { transform: translate3d(-3%, 4%, 0) scale(1.06); } }
+body::after { content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none; opacity: .05;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence baseFrequency='.9' numOctaves='2'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>"); }
+
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { scrollbar-width: none; }
+@keyframes sk { to { background-position: -200% 0; } }
+@keyframes toastIn { from { opacity: 0; transform: translateY(8px) scale(.98); } to { opacity: 1; transform: none; } }
+@keyframes fadeUp { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: none; } }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+/* spotlight theo con trỏ */
+.spot { position: relative; overflow: hidden; }
+.spot::before { content: ""; position: absolute; inset: 0; opacity: 0; transition: opacity .3s; z-index: 2; pointer-events: none;
+  background: radial-gradient(280px circle at var(--mx, 50%) var(--my, 50%), rgba(91,140,255,.28), transparent 60%); }
+.spot:hover::before { opacity: 1; }
+
+/* tilt + viền gradient chạy quanh */
+.tilt { transition: transform .25s ease-out; will-change: transform; }
+@property --angle { syntax: '<angle>'; initial-value: 0deg; inherits: false; }
+.border-run { position: relative; }
+.border-run::before { content: ""; position: absolute; inset: -1px; border-radius: inherit; padding: 1px; pointer-events: none; z-index: 3;
+  background: conic-gradient(from var(--angle), transparent 70%, var(--accent), var(--hot), transparent);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude;
+  opacity: 0; transition: opacity .3s; animation: spin 4s linear infinite; }
+.border-run:hover::before { opacity: 1; }
+@keyframes spin { to { --angle: 360deg; } }
+
+/* hiện dần khi cuộn */
+.reveal { opacity: 0; transform: translateY(32px); filter: blur(8px); transition: opacity .8s var(--ease), transform .8s var(--ease), filter .8s var(--ease); }
+.reveal.in { opacity: 1; transform: none; filter: none; }
+
+/* marquee */
+.marquee { display: flex; overflow: hidden; gap: 48px; mask-image: linear-gradient(90deg, transparent, #000 10%, #000 90%, transparent); }
+.marquee__track { display: flex; gap: 48px; flex-shrink: 0; min-width: 100%; align-items: center; justify-content: space-around; animation: scroll 30s linear infinite; }
+.marquee:hover .marquee__track { animation-play-state: paused; }
+@keyframes scroll { to { transform: translateX(calc(-100% - 48px)); } }
+.vmarquee { display: flex; flex-direction: column; gap: 16px; animation: vscroll 40s linear infinite; }
+.vmarquee.rev { animation-direction: reverse; }
+.vwrap:hover .vmarquee { animation-play-state: paused; }
+@keyframes vscroll { to { transform: translateY(calc(-50% - 8px)); } }
+
+/* Ảnh sản phẩm trôi nhẹ. Luôn phóng sẵn 8% để khi trôi/xoay không bao giờ lộ góc nền (lỗi răng cưa trước đây). */
+@keyframes float-img { 0%,100% { transform: scale(1.08) translateY(0) rotate(0); } 50% { transform: scale(1.08) translateY(-7px) rotate(.6deg); } }
+.float-img { animation: float-img 7s ease-in-out infinite; }
+@keyframes float { 0%,100% { transform: translateY(0) rotate(0); } 50% { transform: translateY(-14px) rotate(1.5deg); } }
+.float { animation: float 6s ease-in-out infinite; }
+@keyframes pulse-dot { 0%,100% { opacity: 1; transform: scale(1); } 50% { opacity: .35; transform: scale(1.6); } }
+.pulse-dot { animation: pulse-dot 1.4s ease-in-out infinite; }
+@keyframes burst { from { opacity: 1; transform: translate(0,0) scale(1); } to { opacity: 0; transform: translate(var(--dx), var(--dy)) scale(.3); } }
+@keyframes bump { 0% { transform: scale(1); } 35% { transform: scale(1.35); } 100% { transform: scale(1); } }
+.bump { animation: bump .5s var(--ease); }
+
+/* thẻ sản phẩm: nút thêm giỏ trượt lên khi hover (desktop) */
+.pcard-cta { transition: transform .3s var(--ease), opacity .3s var(--ease); }
+@media (hover: hover) and (pointer: fine) {
+  .pcard-cta { transform: translateY(120%); opacity: 0; }
+  .pcard:hover .pcard-cta, .pcard:focus-within .pcard-cta { transform: none; opacity: 1; }
+}
+/* chỉ báo ảnh trên thẻ: thanh nhỏ, thanh đang chọn dài ra */
+.pager-dot { height: 4px; width: 14px; border-radius: 999px; background: color-mix(in srgb, var(--text-0) 28%, transparent); transition: width .3s var(--ease), background .3s; }
+.pager-dot[aria-pressed='true'], [aria-pressed='true'] > .pager-dot { width: 26px; background: var(--text-0); }
+
+/* Danh sách xuất hiện lần lượt (dùng style="--i: n") */
+.stagger > * { animation: fadeUp .55s var(--ease) both; animation-delay: calc(var(--i, 0) * 55ms); }
+
+/* =========================================================================
+   HỘP THOẠI gốc <dialog> (focus trap, Esc, top layer miễn phí), thay cho div tự dựng
+   ========================================================================= */
+dialog.ov { position: fixed; inset: 0; width: 100%; height: 100%; max-width: none; max-height: none; margin: 0; padding: 0; border: 0; background: transparent; color: inherit; overflow: hidden; }
+dialog.ov[open] { display: flex; }
+dialog.ov::backdrop { background: rgb(2 4 10 / .62); backdrop-filter: blur(6px); animation: fadeIn .2s var(--ease); }
+dialog.ov--center { align-items: center; justify-content: center; padding: 16px; }
+dialog.ov--top { align-items: flex-start; justify-content: center; padding: 12vh 16px 16px; }
+dialog.ov--left { justify-content: flex-start; }
+dialog.ov--right { justify-content: flex-end; }
+dialog.ov--bottom { align-items: flex-end; }
+.ov-panel { animation: ovPop .28s var(--ease); }
+.ov--left .ov-panel { animation-name: ovLeft; }
+.ov--right .ov-panel { animation-name: ovRight; }
+.ov--bottom .ov-panel { animation-name: ovUp; }
+@keyframes ovPop { from { opacity: 0; transform: translateY(10px) scale(.98); } to { opacity: 1; transform: none; } }
+@keyframes ovLeft { from { transform: translateX(-100%); } to { transform: none; } }
+@keyframes ovRight { from { transform: translateX(100%); } to { transform: none; } }
+@keyframes ovUp { from { transform: translateY(100%); } to { transform: none; } }
+
+/* =========================================================================
+   HERO: sân khấu sản phẩm tự luân phiên
+   ========================================================================= */
+@keyframes kenburns { from { transform: scale(1.04); } to { transform: scale(1.14); } }
+@keyframes heroFill { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+@keyframes slideUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+.hero-slide { opacity: 0; transition: opacity .9s var(--ease); }
+.hero-slide[data-on='true'] { opacity: 1; }
+.hero-slide[data-on='true'] img { animation: kenburns 9s ease-out forwards; }
+.hero-info > * { animation: slideUp .6s var(--ease) both; }
+.hero-info > *:nth-child(2) { animation-delay: .08s; }
+.hero-fill { transform-origin: left; animation: heroFill var(--dur, 6500ms) linear forwards; }
+
+/* =========================================================================
+   SCROLL-DRIVEN ANIMATION (CSS thuần, không JS). Trình duyệt chưa hỗ trợ thì thanh này đơn giản không hiện.
+   ========================================================================= */
+.scroll-progress { display: none; }
+@supports (animation-timeline: scroll()) {
+  .scroll-progress { display: block; position: fixed; top: 0; left: 0; right: 0; height: 3px; z-index: 90; pointer-events: none;
+    background: var(--grad-brand); transform-origin: 0 50%; transform: scaleX(0); animation: grow linear both; animation-timeline: scroll(root block); }
+  @keyframes grow { to { transform: scaleX(1); } }
+  /* ảnh hero trôi chậm hơn nội dung khi cuộn => cảm giác chiều sâu */
+  .parallax { animation: parallax linear both; animation-timeline: view(); animation-range: cover; }
+  @keyframes parallax { from { transform: translateY(-3%); } to { transform: translateY(3%); } }
+}
+
+/* dấu tích thành công + pháo giấy */
+@keyframes draw { to { stroke-dashoffset: 0; } }
+.draw { stroke-dasharray: var(--len); stroke-dashoffset: var(--len); animation: draw .7s var(--ease) .15s forwards; }
+@keyframes confetti { 0% { opacity: 1; transform: translate(0,0) rotate(0) scale(1); } 100% { opacity: 0; transform: translate(var(--dx), var(--dy)) rotate(var(--r)) scale(.9); } }
+.confetti > i { position: absolute; left: 50%; top: 50%; width: 8px; height: 14px; margin: -7px 0 0 -4px; border-radius: 2px; opacity: 0; animation: confetti 1.2s var(--ease) forwards; animation-delay: calc(var(--d) * 1ms); }
+
+/* =========================================================================
+   VIEW TRANSITIONS
+   ========================================================================= */
+/* khung ảnh ở trang chi tiết nhận ảnh "bay" từ thẻ sản phẩm */
+.vt-product { view-transition-name: product-image; }
+::view-transition-group(product-image) { animation-duration: .55s; animation-timing-function: var(--ease); }
+::view-transition-old(product-image), ::view-transition-new(product-image) { height: 100%; width: 100%; object-fit: cover; }
+/* chuyển trang: trang cũ mờ đi, trang mới hiện lên và "lấy nét" nhẹ; thanh header đứng yên (có tên riêng) */
+@keyframes vt-out { to { opacity: 0; } }
+@keyframes vt-in { from { opacity: 0; transform: scale(1.012); } }
+::view-transition-old(root) { animation: vt-out .2s var(--ease) both; }
+::view-transition-new(root) { animation: vt-in .42s var(--ease) both; }
+.site-header { view-transition-name: site-header; }
+html[data-vt='theme'] .site-header { view-transition-name: none; }
+::view-transition-group(site-header) { animation-duration: 0s; }
+::view-transition-old(site-header), ::view-transition-new(site-header) { animation: none; }
+::view-transition-old(site-header) { display: none; }
+/* đổi giao diện sáng/tối: ảnh mới loang tròn ra từ nút bấm (JS animate clip-path) */
+html[data-vt='theme']::view-transition-old(root), html[data-vt='theme']::view-transition-new(root) { animation: none; mix-blend-mode: normal; }
+html[data-vt='theme']::view-transition-old(root) { z-index: 1; }
+html[data-vt='theme']::view-transition-new(root) { z-index: 2; }
+
+/* zoom ảnh khi rê chuột (trang chi tiết) */
+@media (hover: hover) and (pointer: fine) {
+  .zoomable { cursor: zoom-in; }
+  .zoomable img { transition: transform .35s var(--ease); }
+  .zoomable:hover img { transform: scale(1.9); transform-origin: var(--zx, 50%) var(--zy, 50%); }
+}
+
+/* gợn sóng khi bấm (JS thêm <span class="ripple"> vào nút) */
+.ripple { position: absolute; border-radius: 50%; background: currentColor; opacity: .28; transform: scale(0); pointer-events: none; animation: ripple .65s var(--ease) forwards; }
+@keyframes ripple { to { transform: scale(1); opacity: 0; } }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
+  .reveal { opacity: 1; transform: none; filter: none; }
+  .hero-slide[data-on='true'] { opacity: 1; }
+  .draw { stroke-dashoffset: 0; }
+  .confetti { display: none; }
+  .ripple { display: none; }
+}

@@ -1,7 +1,18 @@
 {
   "name": "techstore",
+  "version": "2.0.0",
   "private": true,
-  "workspaces": ["frontend", "backend"],
-  "scripts": {"dev": "concurrently -n api,web -c blue,green \"npm run dev -w backend\" \"npm run dev -w frontend\"", "build": "npm run build -w frontend", "start": "npm run start -w backend"},
-  "devDependencies": {"concurrently": "^9.1.2"}
+  "description": "TECHSTORE - web bán hàng thiết bị công nghệ (React + Express + MySQL/XAMPP)",
+  "workspaces": ["backend", "frontend"],
+  "scripts": {
+    "dev": "concurrently -n api,web -c blue,green \"npm run dev -w backend\" \"npm run dev -w frontend\"",
+    "build": "npm run build -w frontend",
+    "start": "npm run start -w backend",
+    "db:setup": "npm run db:setup -w backend",
+    "db:reset": "npm run db:reset -w backend"
+  },
+  "engines": { "node": ">=20" },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
 }

@@ -1,1 +1,29 @@
-<!doctype html><html lang="vi"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><meta name="theme-color" content="#101d36"/><meta name="description" content="TECHSTORE — Thiết bị công nghệ chính hãng, giá tốt."/><title>TECHSTORE — Công nghệ trong tầm tay</title></head><body><div id="root"></div><script type="module" src="/src/main.jsx"></script></body></html>
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="TECHSTORE — cửa hàng thiết bị công nghệ chính hãng: laptop, điện thoại, máy tính bảng, màn hình, phụ kiện. Thanh toán khi nhận hàng, đổi trả 30 ngày." />
+    <meta name="theme-color" content="#07080c" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <title>TECHSTORE — Technology for Life</title>
+    <script>
+      // Áp dụng giao diện sáng/tối TRƯỚC khi vẽ trang để không bị nháy: ưu tiên lựa chọn đã lưu, nếu chưa có thì theo hệ điều hành.
+      try {
+        var t = localStorage.getItem('ts-theme');
+        if (!t && window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) t = 'light';
+        if (t === 'light') document.documentElement.dataset.theme = 'light';
+        var m = document.querySelector('meta[name="theme-color"]');
+        if (m && t === 'light') m.setAttribute('content', '#f4f6fb');
+      } catch (e) {}
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" media="print" onload="this.media='all'" />
+    <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" /></noscript>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

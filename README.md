@@ -1,117 +1,85 @@
-# TECHSTORE — Online Technology Store
+# TECHSTORE — web bán hàng thiết bị công nghệ
 
-Ứng dụng thương mại điện tử thiết bị công nghệ gồm frontend React/Vite và REST API Express/MySQL. Kho mã hiện đã có giao diện cửa hàng responsive, luồng duyệt sản phẩm, giỏ hàng, xác thực, đặt/hủy đơn hàng có transaction và dashboard quản trị cơ bản.
+Đồ án môn Thương mại điện tử. Giao diện React (thiết kế Figma "Dark Tech Editorial", có chế độ sáng/tối), backend Express, dữ liệu lưu trong **MySQL của XAMPP** (không còn Docker).
 
-## Công nghệ
+| Thành phần | Công nghệ |
+|---|---|
+| Giao diện | React 19 · Vite · Tailwind CSS v4 · React Router · Chart.js |
+| API | Node.js · Express · JWT · bcryptjs |
+| Cơ sở dữ liệu | MySQL / MariaDB trong XAMPP (quản lý bằng phpMyAdmin) |
 
-- Frontend: React 18, Vite, React Router, Axios, Bootstrap 5, Lucide, Chart.js dependency.
-- Backend: Node.js, Express, JWT, bcrypt, express-validator, MySQL2, Helmet, rate limit.
-- Database: MySQL 8, InnoDB, schema và seed.
+## Chức năng
 
-## Chạy bằng Docker Compose (Windows PowerShell)
+**Khách hàng**: trang chủ động (hero, danh mục, so sánh, đánh giá thật) · danh sách sản phẩm có tìm kiếm không dấu, lọc theo danh mục / thương hiệu / giá / còn hàng / đang giảm, sắp xếp, phân trang · chi tiết sản phẩm (thư viện ảnh, thông số, sản phẩm liên quan, **đánh giá sau khi mua**) · giỏ hàng + mini-cart · yêu thích (đồng bộ vào tài khoản) · đăng ký / đăng nhập · thanh toán có **mã giảm giá**, COD hoặc chuyển khoản mô phỏng · lịch sử, chi tiết và **hủy đơn** · command palette `Ctrl K`.
 
-Cần Docker Desktop đang chạy và Docker Compose v2. Từ thư mục gốc dự án:
+**Quản trị** (`/admin`): tổng quan doanh thu (biểu đồ 7 ngày / 4 tuần, trạng thái đơn) · quản lý đơn hàng theo luồng *chờ xác nhận → đã xác nhận → đang giao → đã giao* · **thêm / sửa / ngừng bán sản phẩm** (có ghi nhật ký kho) · khách hàng (khóa / mở khóa) · mã giảm giá.
 
-```powershell
-Copy-Item .env.example .env
-notepad .env
-```
+**Giao diện**: sáng/tối có hiệu ứng lan tròn (theo hệ điều hành nếu chưa chọn) · chuyển trang bằng View Transitions (ảnh sản phẩm "bay" sang trang chi tiết, header đứng yên) · gợn sóng khi bấm nút · hiệu ứng bay vào giỏ, pháo giấy khi đặt hàng, tim nở khi yêu thích · tôn trọng `prefers-reduced-motion` · dùng được bằng bàn phím.
 
-Đổi `MYSQL_PASSWORD`, `MYSQL_ROOT_PASSWORD` và `JWT_SECRET` trong `.env` thành giá trị riêng. `DB_PASSWORD` phải giống `MYSQL_PASSWORD`. Compose bắt buộc các giá trị này nên sẽ báo lỗi nếu chưa cấu hình.
+## Chạy với XAMPP (Windows)
 
-```powershell
-docker compose build
-docker compose up -d
-docker compose ps
-docker compose logs -f
-```
+1. Cài **Node.js 20+** (bản LTS) tại https://nodejs.org và **XAMPP**.
+2. Mở **XAMPP Control Panel** → bấm **Start** ở dòng **MySQL** (không cần bật Apache).
+3. Chạy file **`start-xampp.bat`** (nhấp đúp). File này sẽ: kiểm tra MySQL → `npm install` lần đầu → tạo database + dữ liệu mẫu → mở `http://localhost:5173`.
 
-- Frontend: http://localhost:5173
-- Backend API: http://localhost:5000/api
-- Kiểm tra API và kết nối DB: http://localhost:5000/api/health
-- MySQL: `localhost:3306`, database `techstore_db`; đăng nhập bằng `MYSQL_USER` và `MYSQL_PASSWORD` trong `.env`.
+Hoặc làm tay trong terminal tại thư mục dự án:
 
-Compose tự mount `database/techstore.sql` vào cơ chế init của MySQL. SQL chỉ chạy khi named volume database được tạo lần đầu và còn rỗng. Dữ liệu sau đó được lưu trong volume `techstore_mysql_data`, không bị ghi đè khi restart hoặc rebuild. Backend chờ healthcheck của MySQL; Vite chạy `0.0.0.0` trong container nhưng gọi API qua `http://localhost:5000/api` trên trình duyệt máy host. Frontend và backend bind-mount source code để thuận tiện phát triển.
-
-```powershell
-# Theo dõi log riêng
-docker compose logs -f backend
-docker compose logs -f db
-docker compose logs -f frontend
-
-# Restart các service
-docker compose restart
-
-# Dừng và xóa container/network (giữ database volume)
-docker compose down
-```
-
-`docker compose down -v` sẽ xóa named volume MySQL và có thể làm mất toàn bộ dữ liệu database. Chỉ dùng khi chủ động muốn xóa sạch dữ liệu demo. Compose không chạy seed tự động. Seed hiện tại dùng `TRUNCATE` các bảng; chỉ chạy trên dữ liệu demo mới hoặc sau khi đã backup, tuyệt đối không chạy trên database cần giữ:
-
-```powershell
-docker compose exec backend npm run seed
-```
-
-Có thể kết nối bằng MySQL Workbench tới `127.0.0.1:3306` với thông tin trong `.env`. Chưa cấu hình phpMyAdmin.
-
-### Import và backup database an toàn
-
-Import schema thủ công chỉ cần thiết nếu volume đã được khởi tạo trước khi schema được thêm/cập nhật. Không import schema lần nữa lên DB có dữ liệu. Trước khi thay đổi database hiện có, tạo backup:
-
-```powershell
-docker compose exec -T db sh -c 'exec mysqldump -uroot -p"$MYSQL_ROOT_PASSWORD" "$MYSQL_DATABASE"' > techstore-backup.sql
-```
-
-Với volume DB mới, file `database/techstore.sql` đã được import tự động. Nếu cần phục hồi, dùng MySQL Workbench hoặc nhập file backup vào database đã chuẩn bị sau khi dừng thao tác ghi.
-
-### Xử lý lỗi thường gặp
-
-- Compose yêu cầu biến môi trường: kiểm tra đã copy `.env.example` thành `.env`, không để trống biến bắt buộc và chạy lệnh từ thư mục gốc.
-- Cổng 3306/5000/5173 đang được dùng: dừng ứng dụng đang giữ cổng hoặc đổi vế trái của port mapping trong `docker-compose.yml` (API URL phải trùng cổng host mới).
-- Backend chưa healthy: xem `docker compose logs -f db backend`; kiểm tra thông tin DB trong `.env` và chờ MySQL hoàn tất lần khởi tạo đầu tiên.
-- Đã có volume cũ, schema mới không được áp dụng: init SQL không chạy lại trên volume có dữ liệu. Backup trước, sau đó áp dụng migration có chủ đích; không dùng `down -v` nếu muốn giữ dữ liệu.
-- Frontend không gọi API: kiểm tra `VITE_API_URL=http://localhost:5000/api`, sau đó rebuild frontend bằng `docker compose build frontend` và `docker compose up -d frontend`.
-- bcrypt build lỗi: xem log build. Image dựa trên `node:22-alpine` cài dependency trong container; đảm bảo Docker Desktop có mạng để tải npm packages.
-
-### Chạy cục bộ không Docker
-
-Yêu cầu Node.js 20+, npm 10+ và MySQL 8. Tạo DB bằng `database/techstore.sql`, cấu hình `backend/.env` theo `backend/.env.example` (DB_HOST là `localhost`, PORT có thể để 5000), rồi chạy:
-
-```powershell
+```bash
 npm install
-npm run seed -w backend
-npm run dev
+npm run db:setup     # tạo database techstore_db + bảng + dữ liệu mẫu (chạy lại nhiều lần vẫn an toàn)
+npm run dev          # giao diện http://localhost:5173 , API http://localhost:5000
 ```
 
-Frontend tại http://localhost:5173, API tại http://localhost:5000/api. Build frontend: `npm run build`.
+### Cách khác để nạp dữ liệu: phpMyAdmin
+Mở `http://localhost/phpmyadmin` → tab **Nhập (Import)** → chọn `database/techstore.sql` → **Thực hiện**. Sau đó xem toàn bộ dữ liệu ở database `techstore_db`.
 
-## Tài khoản demo
+### Tài khoản demo
+| Vai trò | Email | Mật khẩu |
+|---|---|---|
+| Quản trị | `admin@techstore.vn` | `Admin123!` |
+| Khách hàng | `khach@techstore.vn` | `Khach123!` |
 
-- Admin: `admin@techstore.vn` / `Admin123!`
-- Khách hàng: `khach@techstore.vn` / `Khach123!`
-- Mã giảm giá seed: `TECH10`, `WELCOME500`
-
-Tài khoản và mật khẩu demo được tạo bởi seed dành cho môi trường trình bày; hãy đổi thông tin trước khi triển khai thật. Không dùng JWT secret mẫu trong môi trường thực.
-
-## Chức năng hiện có
-
-- Cửa hàng responsive, danh mục, tìm kiếm/lọc cơ bản, chi tiết sản phẩm, giá/đánh giá từ API.
-- Giỏ hàng phía trình duyệt, cập nhật số lượng và tổng tiền.
-- Đăng ký/đăng nhập JWT, role customer/admin, mật khẩu bcrypt.
-- Checkout COD/mô phỏng; API tính lại giá, kiểm tra kho và coupon, lưu snapshot giá, payment, lịch sử và trừ kho nguyên tử trong transaction.
-- Xem/hủy đơn của chính khách hàng; hoàn kho trong transaction khi hủy hợp lệ.
-- Admin dashboard API, danh sách đơn và cập nhật trạng thái qua API.
-- SQL schema chứa 19 bảng nghiệp vụ, index, khóa ngoại và dữ liệu seed cơ bản.
-
-## Cấu trúc
-
-```text
-frontend/src/{components,pages,layouts,services,context}
-backend/src/{config,controllers,middlewares,routes,utils}
-database/techstore.sql
-docs/{API,DATABASE,PROJECT_PLAN}.md
+### Chạy một cổng (giống bản triển khai)
+```bash
+npm run build && npm start      # mở http://localhost:5000 — Express phục vụ luôn giao diện đã build
 ```
 
-## Tiến độ và giới hạn hiện tại
+## Cấu hình
+`backend/.env` (đã có sẵn, mặc định khớp XAMPP vừa cài):
 
-Đây là nền tảng chạy được và các luồng đầu tiên, chưa phải toàn bộ phạm vi trong master brief. Admin CRUD sản phẩm/danh mục/thương hiệu/khách hàng/coupon/review, địa chỉ tài khoản, wishlist, review API, upload Multer, cart được lưu DB, so sánh, pagination UI, dashboard biểu đồ Chart.js, và seed 20 sản phẩm/đơn hàng mẫu còn trong backlog. Cần chạy schema và seed trên MySQL cài tại máy trước khi API hoạt động; môi trường hiện tại không có lệnh `mysql` sẵn có.
+```
+DB_HOST=127.0.0.1   DB_PORT=3306   DB_USER=root   DB_PASSWORD=   DB_NAME=techstore_db
+PORT=5000           JWT_SECRET=...  (đổi thành chuỗi ngẫu nhiên khi đưa lên môi trường thật)
+```
+Nếu bạn đã đặt mật khẩu cho `root` trong XAMPP, điền vào `DB_PASSWORD`.
+
+## Xử lý sự cố
+
+| Triệu chứng | Cách xử lý |
+|---|---|
+| Trang hiện "Chưa kết nối được dữ liệu cửa hàng" | MySQL chưa bật (Start trong XAMPP) hoặc chưa nhập database. Làm theo 3 bước ngay trên màn hình đó. |
+| `ECONNREFUSED` khi `db:setup` | MySQL chưa chạy, hoặc XAMPP dùng cổng khác 3306 → sửa `DB_PORT`. |
+| `ER_ACCESS_DENIED_ERROR` | Sai `DB_USER` / `DB_PASSWORD` trong `backend/.env`. |
+| MySQL trong XAMPP không Start được | Cổng 3306 đang bị MySQL khác chiếm (ví dụ MySQL Server cài riêng). Tắt dịch vụ đó hoặc đổi cổng trong `my.ini` của XAMPP rồi sửa `DB_PORT`. |
+| Muốn xóa sạch dữ liệu làm lại | `npm run db:reset` (hỏi xác nhận) hoặc Drop database `techstore_db` trong phpMyAdmin rồi nhập lại. |
+| Ảnh sản phẩm không hiện | Ảnh mẫu lấy từ Unsplash nên cần Internet; ảnh sản phẩm tự thêm có thể dùng bất kỳ link `http(s)://` hoặc `/đường-dẫn`. |
+
+## Cấu trúc thư mục
+
+```
+techstore/
+├─ start-xampp.bat          chạy nhanh trên Windows
+├─ database/techstore.sql   cấu trúc bảng + dữ liệu mẫu (nhập bằng phpMyAdmin hoặc npm run db:setup)
+├─ backend/                 Express API  (src/controllers, services, routes, middlewares; scripts/setup-db.js)
+├─ frontend/                giao diện React (src/pages, components.tsx, store.tsx, api.ts, index.css)
+└─ docs/                    API.md, DATABASE.md
+```
+
+Tài liệu thêm: [`docs/API.md`](docs/API.md) · [`docs/DATABASE.md`](docs/DATABASE.md).
+
+## Ghi chú thiết kế
+
+- **Giá và tồn kho luôn do máy chủ quyết định**: khi đặt hàng, backend đọc lại giá từ MySQL, khóa dòng sản phẩm (`SELECT … FOR UPDATE`) trong một transaction nên hai người mua cùng lúc không thể bán vượt tồn kho. Hủy đơn tự hoàn kho và trả lại lượt dùng mã giảm giá.
+- Đơn hàng gắn với tài khoản (cần đăng nhập để thanh toán); giỏ hàng của khách vãng lai lưu trong trình duyệt và được giữ nguyên sau khi đăng nhập.
+- Doanh thu trên trang quản trị chỉ tính đơn **đã giao**. Sản phẩm không xóa cứng mà chuyển sang "ngừng bán" để giữ lịch sử đơn hàng và kho.
+- Dùng `bcryptjs` (thuần JavaScript) thay cho `bcrypt` để cài trên Windows không cần công cụ biên dịch.
