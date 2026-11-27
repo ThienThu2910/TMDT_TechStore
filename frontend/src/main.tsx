@@ -1,6 +1,6 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
-import App from './App'
+import App from './App.tsx'
 import './index.css'
 
 try { if (localStorage.getItem('ts-theme') === 'light') document.documentElement.dataset.theme = 'light' } catch { /* bỏ qua */ }
