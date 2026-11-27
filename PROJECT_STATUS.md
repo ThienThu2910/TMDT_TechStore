@@ -1,6 +1,8 @@
 # TECHSTORE — trạng thái dự án
 
-Cập nhật: 2026-11-25.
+> Lưu ý môi trường: ứng dụng hiện chạy React/Vite + Express với MySQL của XAMPP; cần Node.js 20+. Nội dung tính năng bên dưới là ảnh chụp trạng thái ngày 2026-11-25 và chưa được rà soát lại sau khi chuyển cấu hình.
+
+Cập nhật nội dung lịch sử: 2026-11-25.
 
 ## Đã hoàn thiện và kiểm chứng
 

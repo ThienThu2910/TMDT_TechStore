@@ -1,5 +1,7 @@
 # TECHSTORE — Báo cáo kiểm thử QA
 
+> Báo cáo lịch sử: kết quả bên dưới thuộc lần chạy Docker ngày 2026-11-25, không xác nhận lần chạy với MySQL XAMPP. Cấu hình XAMPP chưa được chạy kiểm tra trong lần chỉnh sửa này.
+
 Ngày kiểm thử: 2026-11-25  
 Môi trường: website tại http://localhost:5173, API tại http://localhost:5000/api, Docker Compose + MySQL 8. Kiểm thử mua hàng dùng dữ liệu tổng hợp và COD local; không dùng cổng thanh toán thật hoặc dữ liệu khách hàng thật.
 

@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 {
   "name": "techstore-frontend",
   "private": true,
@@ -28,6 +27,3 @@
     "vite": "^8.0.5"
   }
 }
-=======
-{"name":"techstore-frontend","version":"1.0.0","type":"module","scripts":{"dev":"vite --host 0.0.0.0","build":"vite build","preview":"vite preview"},"dependencies":{"axios":"^1.7.9","bootstrap":"^5.3.3","chart.js":"^4.4.7","lucide-react":"^0.468.0","react":"^18.3.1","react-chartjs-2":"^5.3.0","react-dom":"^18.3.1","react-router-dom":"^7.18.7"},"devDependencies":{"@vitejs/plugin-react":"^4.3.4","vite":"^6.0.5"}}
->>>>>>> 7af6a08 (Cải thiện giao diện và hoàn thiện các chức năng website TECHSTORE)

@@ -1,6 +1,8 @@
 # TECHSTORE — kế hoạch và mốc triển khai
 
-Cập nhật: 2026-11-25. Active application root: workspace `TMDT_TechStore/` (React/Vite JavaScript + Express/MySQL + Docker Compose). Một repository React/TypeScript/XAMPP lồng bên trong được giữ nguyên và không dùng để chạy stack active.
+> Ghi chú cũ: phần kế hoạch bên dưới được viết cho cấu hình Docker trước đây. Cấu hình hiện tại của ứng dụng là React/Vite + Express + MySQL của XAMPP; cần Node.js 20+.
+
+Cập nhật nội dung lịch sử: 2026-11-25.
 
 ## Đã hoàn thành
 

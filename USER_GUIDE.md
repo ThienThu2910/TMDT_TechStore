@@ -23,4 +23,4 @@ Các tài khoản seed dùng cho demo:
 
 ## Cấu hình cửa hàng
 
-Tạo `.env` từ `.env.example`. Thay hotline/địa chỉ placeholder và cấu hình URL Google Form hoặc link thanh toán nếu có. Các URL payment chỉ là liên kết tùy chọn; chúng không xác nhận thanh toán và không tích hợp webhook.
+Thiết lập kết nối MySQL trong `backend/.env` (tạo từ `backend/.env.example`). Các hotline, địa chỉ, Google Form và URL thanh toán tùy chọn nằm trong `frontend/.env` (mẫu tại `frontend/.env.example`). Vite đọc các giá trị này lúc chạy hoặc build. URL thanh toán chỉ là liên kết tùy chọn; chúng không xác nhận thanh toán và không tích hợp webhook.
