@@ -32,6 +32,8 @@ app.use(helmet({
 }))
 app.use(cors({ origin: env.frontendOrigins }))
 app.use(express.json({ limit: '1mb' }))
+const uploadsDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../uploads')
+app.use('/uploads', express.static(uploadsDir, { maxAge: '1d', immutable: true, dotfiles: 'deny' }))
 
 app.get('/api/health', async (req, res) => {
   try {

@@ -1,8 +1,8 @@
 import { Fragment, cloneElement, isValidElement, useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type FormEvent, type MouseEvent, type ReactNode } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { Link, NavLink, useGo } from './nav'
+import { Link, useGo } from './nav'
 import {
-  Search, ShoppingBag, UserRound, Heart, Menu, X, Star, ChevronRight, CircleCheck, CircleAlert, Sun, Moon, CornerDownLeft, ArrowUpRight,
+  Search, ShoppingBag, UserRound, Heart, Menu, X, Star, ChevronRight, ChevronDown, CircleCheck, CircleAlert, Sun, Moon, CornerDownLeft, ArrowUpRight,
   Laptop, Smartphone, Tablet, Monitor, Headphones, Package, Box, Clock, Trash2, Minus, Plus, Undo2, Truck,
 } from 'lucide-react'
 import { discountPct, vnd, fold, FREE_SHIP, type Category, type Product } from './data'
@@ -150,11 +150,7 @@ export function SearchBar({ className = '', onDone }: { className?: string; onDo
   )
 }
 
-const buildNav = (categories: Category[]) => [
-  { label: 'Tất cả', to: '/products', hot: false },
-  ...categories.map((c) => ({ label: c.name, to: `/products?cat=${c.slug}`, hot: false })),
-  { label: 'Săn deal', to: '/products?sale=1', hot: true },
-]
+const buildNav = (categories: Category[]) => categories.map((c) => ({ label: c.name, to: `/products?cat=${c.slug}` }))
 
 function TopBar() {
   const msg = ['Miễn phí giao hàng từ 5.000.000đ', 'Đổi trả 30 ngày', 'Hotline 1800 6868']
@@ -252,6 +248,7 @@ function MiniCart({ onClose }: { onClose: () => void }) {
 export function Header() {
   const { cartCount, user, wishlist, categories } = useStore()
   const [open, setOpen] = useState(false)
+  const [categoriesOpen, setCategoriesOpen] = useState(false)
   const [pal, setPal] = useState(false)
   const [cartOpen, setCartOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
@@ -261,6 +258,8 @@ export function Header() {
   const navItems = useMemo(() => buildNav(categories), [categories])
   const [q, setQ] = useState('')
   const isMac = typeof navigator !== 'undefined' && /Mac/i.test(navigator.platform)
+  const isSalePage = loc.pathname === '/products' && new URLSearchParams(loc.search).get('sale') === '1'
+  const isProductsPage = (loc.pathname === '/products' && !isSalePage) || loc.pathname.startsWith('/product/')
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 40)
@@ -283,18 +282,31 @@ export function Header() {
   const [bumpKey, setBumpKey] = useState(0)
   useEffect(() => { if (cartCount > prevCount.current) setBumpKey((k) => k + 1); prevCount.current = cartCount }, [cartCount])
 
-  // thanh trượt dưới menu
-  const refs = useRef<(HTMLAnchorElement | null)[]>([])
-  const [hover, setHover] = useState<number | null>(null)
-  const full = loc.pathname + loc.search
-  const active = loc.pathname === '/products' ? navItems.findIndex((n) => n.to === full) : -1
-  const target = hover ?? active
-  const [bar, setBar] = useState({ left: 0, width: 0 })
-  useLayoutEffect(() => {
-    const el = target >= 0 ? refs.current[target] : null
-    if (el) setBar({ left: el.offsetLeft, width: el.offsetWidth })
-  }, [target])
-  const PAD = 10 // phải khớp với px-2.5 của mỗi mục menu
+  const categoryNavRef = useRef<HTMLElement>(null)
+  const categoryTriggerRef = useRef<HTMLButtonElement>(null)
+  const openedByHover = useRef(false)
+  useEffect(() => {
+    if (!categoriesOpen) return
+    const closeOnOutsideClick = (event: PointerEvent) => {
+      if (!categoryNavRef.current?.contains(event.target as Node)) {
+        openedByHover.current = false
+        setCategoriesOpen(false)
+      }
+    }
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        openedByHover.current = false
+        setCategoriesOpen(false)
+        categoryTriggerRef.current?.focus()
+      }
+    }
+    document.addEventListener('pointerdown', closeOnOutsideClick)
+    document.addEventListener('keydown', closeOnEscape)
+    return () => {
+      document.removeEventListener('pointerdown', closeOnOutsideClick)
+      document.removeEventListener('keydown', closeOnEscape)
+    }
+  }, [categoriesOpen])
 
   const themeClick = (e: MouseEvent<HTMLButtonElement>) => {
     const r = e.currentTarget.getBoundingClientRect()
@@ -307,36 +319,53 @@ export function Header() {
       <div className="scroll-progress" aria-hidden />
       <TopBar />
       <header className="site-header sticky top-0 z-40 px-3 pt-4 sm:px-6 pointer-events-none">
-        <div className={`pointer-events-auto mx-auto flex max-w-[1280px] items-center gap-3 rounded-full border border-line px-4 transition-all duration-300 sm:px-6 ${scrolled ? 'h-14 bg-surface/80 backdrop-blur-2xl shadow-lg' : 'h-16 bg-surface/60 backdrop-blur-xl'}`}>
-          <button className="-ml-1 grid h-10 w-10 shrink-0 place-items-center rounded-full hover:bg-subtle xl:hidden" onClick={() => setOpen(true)} aria-label="Mở menu"><Menu size={20} /></button>
+        <div className={`pointer-events-auto mx-auto flex min-w-0 max-w-[1280px] items-center gap-2 rounded-full border border-line px-2 transition-all duration-300 sm:gap-3 sm:px-6 ${scrolled ? 'h-14 bg-surface/80 backdrop-blur-2xl shadow-lg' : 'h-16 bg-surface/60 backdrop-blur-xl'}`}>
+          <button className="-ml-1 grid h-9 w-9 shrink-0 place-items-center rounded-full hover:bg-subtle lg:hidden" onClick={() => setOpen(true)} aria-label="Mở menu"><Menu size={20} /></button>
           <Logo />
-          <nav className="relative ml-4 hidden shrink-0 xl:block" aria-label="Danh mục" onMouseLeave={() => setHover(null)}>
-            <ul className="relative flex items-center">
-              {navItems.map((n, i) => (
-                <li key={n.to} className="shrink-0">
-                  <NavLink ref={(el) => { refs.current[i] = el }} to={n.to} onMouseEnter={() => setHover(i)} onFocus={() => setHover(i)} onBlur={() => setHover(null)}
-                    className={`relative flex items-center gap-1.5 whitespace-nowrap px-2.5 py-2 text-sm font-medium transition-colors ${target === i ? 'text-ink' : 'text-ink-2'}`}>
-                    {n.label}{n.hot && <span className="pulse-dot h-1.5 w-1.5 rounded-full bg-hot" />}
-                  </NavLink>
-                </li>
-              ))}
-            </ul>
-            <span aria-hidden className="absolute -bottom-1 h-0.5 rounded-full transition-all duration-300" style={{ left: bar.left + PAD, width: Math.max(0, bar.width - PAD * 2), opacity: target >= 0 ? 1 : 0, background: 'var(--grad-brand)', transitionTimingFunction: 'var(--ease)' }} />
+          <nav className="hidden shrink-0 items-center gap-0.5 lg:flex" aria-label="Điều hướng chính">
+            <Link to="/" className={`whitespace-nowrap rounded-full px-2.5 py-2 text-[13px] font-medium transition-colors hover:bg-subtle ${loc.pathname === '/' ? 'bg-brand-50 text-ink' : 'text-ink-2'}`}>Trang chủ</Link>
+            <Link to="/products" className={`whitespace-nowrap rounded-full px-2.5 py-2 text-[13px] font-medium transition-colors hover:bg-subtle ${isProductsPage ? 'bg-brand-50 text-ink' : 'text-ink-2'}`}>Sản phẩm</Link>
+            <Link to="/products?sale=1" className={`whitespace-nowrap rounded-full px-2.5 py-2 text-[13px] font-medium transition-colors hover:bg-subtle ${isSalePage ? 'bg-brand-50 text-ink' : 'text-ink-2'}`}>Ưu đãi</Link>
           </nav>
-          <form role="search" onSubmit={(e) => { e.preventDefault(); nav(`/products?q=${encodeURIComponent(q)}`) }} className="relative ml-auto hidden w-48 shrink transition-all duration-300 focus-within:w-72 lg:block xl:focus-within:w-80">
+          <nav ref={categoryNavRef} className="relative ml-1 hidden shrink-0 lg:block" aria-label="Danh mục sản phẩm"
+            onPointerEnter={(event) => { if (event.pointerType === 'mouse') { openedByHover.current = true; setCategoriesOpen(true) } }}
+            onMouseLeave={() => { openedByHover.current = false; setCategoriesOpen(false) }}
+            onBlur={(event) => { if (!event.currentTarget.contains(event.relatedTarget as Node | null)) { openedByHover.current = false; setCategoriesOpen(false) } }}>
+            <button ref={categoryTriggerRef} type="button" aria-expanded={categoriesOpen} aria-controls="header-category-menu"
+              onClick={() => { if (openedByHover.current) openedByHover.current = false; else setCategoriesOpen((value) => !value) }}
+              className="flex h-9 items-center gap-1.5 rounded-full px-3 text-sm font-medium text-ink-2 transition-colors hover:bg-subtle hover:text-ink">
+              Danh mục <ChevronDown size={15} className={`transition-transform ${categoriesOpen ? 'rotate-180' : ''}`} />
+            </button>
+            {categoriesOpen && (
+              <div id="header-category-menu" className="absolute left-0 top-full z-50 w-[min(26rem,calc(100vw_-_2rem))] pt-2">
+                <ul className="grid grid-cols-2 gap-1 rounded-2xl border border-line bg-surface/95 p-2 shadow-xl backdrop-blur-2xl">
+                  {navItems.map((item) => (
+                    <li key={item.to}>
+                      <Link to={item.to} onClick={() => setCategoriesOpen(false)}
+                        className={`flex min-h-10 items-center justify-between gap-2 rounded-xl px-3 py-2 text-sm transition-colors hover:bg-subtle ${loc.pathname + loc.search === item.to ? 'bg-brand-50 text-ink' : 'text-ink-2'}`}>
+                        <span className="truncate">{item.label}</span>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </nav>
+          <form role="search" onSubmit={(e) => { e.preventDefault(); nav(`/products?q=${encodeURIComponent(q)}`) }} className="relative ml-auto hidden w-48 min-w-0 shrink transition-all duration-300 focus-within:w-72 lg:block xl:focus-within:w-80">
             <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-ink-3" />
             <input value={q} onChange={(e) => setQ(e.target.value)} className="input h-10 rounded-full pl-9 pr-16 text-sm" placeholder="Tìm kiếm..." aria-label="Tìm kiếm" />
             <button type="button" onClick={() => setPal(true)} aria-label="Mở tìm nhanh" className="num absolute right-2 top-1/2 -translate-y-1/2 rounded-md border border-line px-1.5 py-0.5 text-[11px] text-ink-3 hover:text-ink">{isMac ? '⌘K' : 'Ctrl K'}</button>
           </form>
-          <div className="ml-auto flex shrink-0 items-center gap-0.5 lg:ml-0">
-            <button onClick={() => setPal(true)} className="grid h-10 w-10 place-items-center rounded-full hover:bg-subtle lg:hidden" aria-label="Tìm kiếm"><Search size={19} /></button>
-            <button onClick={themeClick} className="grid h-10 w-10 place-items-center rounded-full hover:bg-subtle" aria-label={theme === 'dark' ? 'Chuyển sang chế độ sáng' : 'Chuyển sang chế độ tối'}>{theme === 'dark' ? <Sun size={19} /> : <Moon size={19} />}</button>
-            <Link to="/account" className="hidden h-10 items-center gap-2 rounded-full px-2.5 hover:bg-subtle sm:flex" aria-label="Tài khoản"><UserRound size={19} /><span className="hidden whitespace-nowrap text-sm font-medium 2xl:inline">{user ? user.name.split(' ').slice(-1)[0] : 'Tài khoản'}</span></Link>
-            <Link to="/products?wish=1" className="relative hidden h-10 w-10 place-items-center rounded-full hover:bg-subtle sm:grid" aria-label={`Yêu thích, ${wishlist.length} sản phẩm`}>
+          <div className="ml-auto flex shrink-0 items-center gap-0 lg:ml-0 sm:gap-0.5">
+            <button onClick={() => setPal(true)} className="grid h-9 w-9 place-items-center rounded-full hover:bg-subtle lg:hidden" aria-label="Tìm kiếm"><Search size={19} /></button>
+            <button onClick={themeClick} className="grid h-9 w-9 place-items-center rounded-full hover:bg-subtle" aria-label={theme === 'dark' ? 'Chuyển sang chế độ sáng' : 'Chuyển sang chế độ tối'}>{theme === 'dark' ? <Sun size={19} /> : <Moon size={19} />}</button>
+            <Link to="/account" className="hidden h-9 items-center gap-2 rounded-full px-2.5 hover:bg-subtle sm:flex" aria-label="Tài khoản và đơn hàng"><UserRound size={19} /><span className="hidden whitespace-nowrap text-sm font-medium 2xl:inline">{user ? user.name.split(' ').slice(-1)[0] : 'Tài khoản'}</span></Link>
+            <Link to="/products?wish=1" className="relative hidden h-9 w-9 place-items-center rounded-full hover:bg-subtle sm:grid" aria-label={`Yêu thích, ${wishlist.length} sản phẩm`}>
               <Heart size={19} />{wishlist.length > 0 && <span className="num absolute right-0 top-0 grid h-4 min-w-4 place-items-center rounded-full bg-accent-2 px-1 text-[10px] font-bold text-white">{wishlist.length}</span>}
             </Link>
-            <button data-cart-icon onClick={() => setCartOpen(true)} aria-haspopup="dialog" className="relative grid h-10 w-10 place-items-center rounded-full hover:bg-subtle" aria-label={`Giỏ hàng, ${cartCount} sản phẩm`}>
-              <ShoppingBag size={19} />{cartCount > 0 && <span key={bumpKey} className={`num absolute right-0 top-0 grid h-4 min-w-4 place-items-center rounded-full bg-hot px-1 text-[10px] font-bold text-white ${bumpKey ? 'bump' : ''}`}>{cartCount}</span>}
+            <button data-cart-icon onClick={() => setCartOpen(true)} aria-haspopup="dialog" className="relative grid h-9 w-9 place-items-center rounded-full hover:bg-subtle 2xl:flex 2xl:w-auto 2xl:gap-2 2xl:px-2.5" aria-label={`Giỏ hàng, ${cartCount} sản phẩm`}>
+              <span className="relative grid h-9 w-9 shrink-0 place-items-center"><ShoppingBag size={19} />{cartCount > 0 && <span key={bumpKey} className={`num absolute right-0 top-0 grid h-4 min-w-4 place-items-center rounded-full bg-hot px-1 text-[10px] font-bold text-white ${bumpKey ? 'bump' : ''}`}>{cartCount}</span>}</span>
+              <span className="hidden whitespace-nowrap text-sm font-medium 2xl:inline">Giỏ hàng</span>
             </button>
           </div>
         </div>
@@ -348,10 +377,16 @@ export function Header() {
           <div className="mb-5 flex items-center justify-between"><Logo /><button onClick={() => setOpen(false)} className="grid h-10 w-10 place-items-center rounded-full hover:bg-subtle" aria-label="Đóng"><X size={20} /></button></div>
           <SearchBar onDone={() => setOpen(false)} className="mb-4" />
           <ul className="space-y-1">
+            <li><Link onClick={() => setOpen(false)} to="/" className="flex items-center justify-between rounded-xl px-3 py-3 font-medium hover:bg-subtle">Trang chủ<ChevronRight size={16} className="text-ink-3" /></Link></li>
+            <li><Link onClick={() => setOpen(false)} to="/products" className="flex items-center justify-between rounded-xl px-3 py-3 font-medium hover:bg-subtle">Tất cả sản phẩm<ChevronRight size={16} className="text-ink-3" /></Link></li>
+            <li><Link onClick={() => setOpen(false)} to="/products?sale=1" className="flex items-center justify-between rounded-xl px-3 py-3 font-medium hover:bg-subtle">Ưu đãi<ChevronRight size={16} className="text-ink-3" /></Link></li>
+            <li className="px-3 pb-1 pt-3 text-xs font-semibold uppercase tracking-wider text-ink-3">Danh mục</li>
             {navItems.map((c) => (
               <li key={c.to}><Link onClick={() => setOpen(false)} to={c.to} className="flex items-center justify-between rounded-xl px-3 py-3 font-medium hover:bg-subtle">{c.label}<ChevronRight size={16} className="text-ink-3" /></Link></li>
             ))}
-            <li><Link onClick={() => setOpen(false)} to="/account" className="flex items-center justify-between rounded-xl px-3 py-3 font-medium hover:bg-subtle">Tài khoản<ChevronRight size={16} className="text-ink-3" /></Link></li>
+            <li className="my-2 border-t border-line" aria-hidden="true" />
+            <li><Link onClick={() => setOpen(false)} to="/cart" className="flex items-center justify-between rounded-xl px-3 py-3 font-medium hover:bg-subtle">Giỏ hàng{cartCount > 0 && <span className="num rounded-full bg-hot px-2 text-xs font-semibold text-white">{cartCount}</span>}</Link></li>
+            <li><Link onClick={() => setOpen(false)} to="/account" className="flex items-center justify-between rounded-xl px-3 py-3 font-medium hover:bg-subtle">Tài khoản &amp; đơn hàng<ChevronRight size={16} className="text-ink-3" /></Link></li>
             <li><Link onClick={() => setOpen(false)} to="/products?wish=1" className="flex items-center justify-between rounded-xl px-3 py-3 font-medium hover:bg-subtle">Yêu thích{wishlist.length > 0 && <span className="num rounded-full bg-brand-50 px-2 text-xs text-brand-600">{wishlist.length}</span>}</Link></li>
           </ul>
         </Overlay>

@@ -1,4 +1,4 @@
-import { Router } from 'express'
+import express, { Router } from 'express'
 import rateLimit from 'express-rate-limit'
 import { admin, auth } from '../middlewares/auth.js'
 import { wrap } from '../utils/http.js'
@@ -47,6 +47,7 @@ a.get('/dashboard', wrap(adminC.dashboard))
 a.get('/orders', wrap(adminC.orders))
 a.patch('/orders/:id/status', wrap(adminC.updateStatus))
 a.get('/products', wrap(adminC.products))
+a.post('/product-images', express.raw({ type: ['image/jpeg', 'image/png', 'image/webp'], limit: '5mb' }), wrap(adminC.uploadProductImage))
 a.post('/products', wrap(adminC.createProduct))
 a.put('/products/:id', wrap(adminC.updateProduct))
 a.delete('/products/:id', wrap(adminC.archiveProduct))

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react'
-import { useParams } from 'react-router-dom'
-import { ChevronLeft, ChevronRight, Minus, Plus, ShieldCheck, Truck, RotateCcw, Heart, PackageX, ShoppingBag, Star, LoaderCircle, SquarePen } from 'lucide-react'
+import { useNavigate, useParams } from 'react-router-dom'
+import { ArrowLeft, ChevronLeft, ChevronRight, Minus, Plus, ShieldCheck, Truck, RotateCcw, Heart, PackageX, ShoppingBag, Star, LoaderCircle, SquarePen } from 'lucide-react'
 import { vnd, type Review } from '../data'
 import { Breadcrumb, EmptyState, PriceBlock, ProductCard, ProductRating, Rating, StockBadge } from '../components'
 import { Link, useGo } from '../nav'
@@ -94,6 +94,7 @@ function ReviewForm({ productId, onSaved }: { productId: number; onSaved: (list:
 
 function ProductView({ id }: { id: number }) {
   const nav = useGo()
+  const navigate = useNavigate()
   const { addToCart, cart, wishlist, toggleWish, products, categories, brands, catName, user, toast, refreshCatalog } = useStore()
   const p = products.find((x) => x.id === id)
   const [editingProduct, setEditingProduct] = useState(false)
@@ -134,9 +135,16 @@ function ProductView({ id }: { id: number }) {
   const canBuy = p.stock > 0 && !over
   const policies = [['Đổi trả trong 30 ngày', 'Đổi trả miễn phí nếu sản phẩm lỗi do nhà sản xuất.'], ['Bảo hành chính hãng 12 tháng', 'Bảo hành tại trung tâm ủy quyền trên toàn quốc.']]
   const add = (from?: Element | null) => { if (addToCart(p.id, qty)) flyToCart(from ?? frame.current?.querySelectorAll('img')[idx]) }
+  const goBack = () => {
+    if (Number(window.history.state?.idx) > 0) navigate(-1)
+    else nav(`/products?cat=${encodeURIComponent(p.category)}`)
+  }
 
   return (
     <div className="container-x pb-28">
+      <button type="button" onClick={goBack} className="btn btn-secondary btn-sm mt-4 !px-4 border-brand-600/40 bg-brand-50 text-brand-600 shadow-sm hover:border-brand-600 hover:bg-brand-50 hover:text-brand-600">
+        <ArrowLeft size={16} />Quay lại
+      </button>
       <Breadcrumb items={[{ label: catName(p.category), to: `/products?cat=${p.category}` }, { label: p.name }]} />
       <div className="grid gap-10 lg:grid-cols-[55fr_45fr]">
         <Gallery images={p.images} name={p.name} frameRef={frame} onIndex={setIdx} />

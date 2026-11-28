@@ -21,13 +21,13 @@ export class ApiError extends Error {
   constructor(message: string, status: number, code?: string) { super(message); this.status = status; this.code = code }
 }
 
-async function request<T>(path: string, opts: { method?: string; body?: unknown } = {}): Promise<T> {
+async function request<T>(path: string, opts: { method?: string; body?: unknown; contentType?: string; rawBody?: boolean } = {}): Promise<T> {
   let res: Response
   try {
     res = await fetch(BASE + path, {
       method: opts.method ?? 'GET',
-      headers: { ...(opts.body !== undefined ? { 'Content-Type': 'application/json' } : {}), ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-      body: opts.body !== undefined ? JSON.stringify(opts.body) : undefined,
+      headers: { ...(opts.body !== undefined ? { 'Content-Type': opts.contentType ?? 'application/json' } : {}), ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+      body: opts.body !== undefined ? (opts.rawBody ? opts.body as BodyInit : JSON.stringify(opts.body)) : undefined,
     })
   } catch {
     throw new ApiError('Không kết nối được máy chủ API. Hãy chắc chắn backend đang chạy (npm run dev).', 0, 'NETWORK')
@@ -100,6 +100,7 @@ export const api = {
     orders: () => get<Order[]>('/admin/orders'),
     setOrderStatus: (id: string, status: OrderStatus) => call<Order>('PATCH', `/admin/orders/${id}/status`, { status }),
     products: () => get<{ products: Product[]; categories: { id: number; name: string; slug: string }[]; brands: { id: number; name: string }[] }>('/admin/products'),
+    uploadProductImage: (file: File) => request<{ url: string }>('/admin/product-images', { method: 'POST', body: file, contentType: file.type, rawBody: true }),
     createProduct: (p: ProductInput) => call<Product>('POST', '/admin/products', p),
     updateProduct: (id: number, p: ProductInput) => call<Product>('PUT', `/admin/products/${id}`, p),
     archiveProduct: (id: number) => call<Product>('DELETE', `/admin/products/${id}`),

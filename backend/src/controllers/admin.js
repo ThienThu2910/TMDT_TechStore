@@ -1,7 +1,15 @@
+import { randomUUID } from 'node:crypto'
+import fs from 'node:fs/promises'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 import pool from '../config/db.js'
 import { fail, int, ok, slugify, str } from '../utils/http.js'
 import { fetchProduct, fetchProducts } from '../services/products.js'
 import { NEXT_STATUS, cancelOrderTx, serializeOrders, withTransaction } from '../services/orders.js'
+
+const PRODUCT_IMAGE_DIR = fileURLToPath(new URL('../../uploads/products/', import.meta.url))
+const PRODUCT_IMAGE_TYPES = new Map([['image/jpeg', 'jpg'], ['image/png', 'png'], ['image/webp', 'webp']])
+const MAX_PRODUCT_IMAGE_BYTES = 5 * 1024 * 1024
 
 const DAY = 86_400_000
 const WEEKDAYS = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7']
@@ -78,6 +86,26 @@ export async function products(req, res) {
   const [categories] = await pool.query('SELECT id, name, slug FROM categories ORDER BY sort_order, name')
   const [brands] = await pool.query('SELECT id, name FROM brands ORDER BY name')
   return ok(res, { products: await fetchProducts({ order: 'p.id DESC' }), categories, brands })
+}
+
+export async function uploadProductImage(req, res) {
+  const contentType = String(req.headers['content-type'] || '').split(';')[0].trim().toLowerCase()
+  const extension = PRODUCT_IMAGE_TYPES.get(contentType)
+  const image = req.body
+  if (!extension || !Buffer.isBuffer(image) || image.length === 0) {
+    throw fail(400, 'Vui lòng chọn ảnh JPG, PNG hoặc WEBP hợp lệ.')
+  }
+  if (image.length > MAX_PRODUCT_IMAGE_BYTES) throw fail(413, 'Mỗi ảnh không được vượt quá 5 MB.')
+
+  const isJpeg = extension === 'jpg' && image.length >= 3 && image[0] === 0xff && image[1] === 0xd8 && image[2] === 0xff
+  const isPng = extension === 'png' && image.length >= 8 && image.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]))
+  const isWebp = extension === 'webp' && image.length >= 12 && image.toString('ascii', 0, 4) === 'RIFF' && image.toString('ascii', 8, 12) === 'WEBP'
+  if (!isJpeg && !isPng && !isWebp) throw fail(400, 'Nội dung tệp không phải ảnh hợp lệ.')
+
+  await fs.mkdir(PRODUCT_IMAGE_DIR, { recursive: true })
+  const filename = `${randomUUID()}.${extension}`
+  await fs.writeFile(path.join(PRODUCT_IMAGE_DIR, filename), image, { flag: 'wx' })
+  return ok(res, { url: `/uploads/products/${filename}` }, 201)
 }
 
 function parseProduct(b) {
