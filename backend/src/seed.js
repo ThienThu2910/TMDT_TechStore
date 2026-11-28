@@ -1,6 +1,8 @@
 import 'dotenv/config';
 import bcrypt from 'bcryptjs';
 import pool from './config/db.js';
+import { additionalProducts } from './seed-products.js';
+import { productImageSources } from './product-image-sources.js';
 
 const categories = [
   ['Laptop', 'laptop'],
@@ -13,7 +15,12 @@ const categories = [
   ['Thiết bị âm thanh', 'thiet-bi-am-thanh'],
 ];
 
-const brands = ['Apple', 'ASUS', 'Dell', 'Samsung', 'Sony', 'Lenovo'];
+const brands = [
+  'Apple', 'ASUS', 'Dell', 'Samsung', 'Sony', 'Lenovo', 'Acer', 'HP', 'MSI',
+  'Xiaomi', 'Google', 'OPPO', 'OnePlus', 'Huawei', 'AOC', 'BenQ', 'Corsair',
+  'Kingston', 'Logitech', 'Keychron', 'Razer', 'HyperX', 'Anker', 'SanDisk',
+  'JBL', 'Bose', 'Marshall', 'LG',
+];
 
 const products = [
   ['MacBook Air 13 M3 2024', 'Apple', 'Laptop', 'macbook-air-13-m3-2024', 25990000, 27990000, 12, 'photo-1517336714731-489689fd1ca8'],
@@ -72,6 +79,51 @@ async function seed() {
         'INSERT INTO product_images(product_id,image_url,alt_text) SELECT ?,?,? WHERE NOT EXISTS (SELECT 1 FROM product_images WHERE product_id=? AND image_url=?)',
         [productId, imageUrl, name, productId, imageUrl],
       );
+    }
+
+    for (const product of additionalProducts) {
+      const [[brand]] = await connection.execute('SELECT id FROM brands WHERE name=?', [product.brand]);
+      const [[category]] = await connection.execute('SELECT id FROM categories WHERE name=?', [product.category]);
+      const [result] = await connection.execute(
+        "INSERT INTO products(name,slug,description,category_id,brand_id,price,original_price,stock,is_new,is_featured,status) VALUES(?,?,?,?,?,?,?,?,?,?,'active') ON DUPLICATE KEY UPDATE id=LAST_INSERT_ID(id)",
+        [
+          product.name,
+          product.slug,
+          product.description,
+          category.id,
+          brand.id,
+          product.price,
+          product.originalPrice,
+          product.stock,
+          1,
+          0,
+        ],
+      );
+      const productId = result.insertId;
+      const imageSource = productImageSources[product.slug];
+      if (!imageSource) throw new Error('Missing product image source for ' + product.slug);
+      const [[existingImage]] = await connection.execute(
+        'SELECT id FROM product_images WHERE product_id=? ORDER BY sort_order,id LIMIT 1',
+        [productId],
+      );
+      if (existingImage) {
+        await connection.execute(
+          'UPDATE product_images SET image_url=?,alt_text=? WHERE id=?',
+          [imageSource.imageUrl, product.name, existingImage.id],
+        );
+      } else {
+        await connection.execute(
+          'INSERT INTO product_images(product_id,image_url,alt_text) VALUES(?,?,?)',
+          [productId, imageSource.imageUrl, product.name],
+        );
+      }
+
+      for (const [sortOrder, [specName, specValue]] of product.specs.entries()) {
+        await connection.execute(
+          'INSERT INTO product_specs(product_id,spec_name,spec_value,sort_order) SELECT ?,?,?,? WHERE NOT EXISTS (SELECT 1 FROM product_specs WHERE product_id=? AND spec_name=?)',
+          [productId, specName, specValue, sortOrder, productId, specName],
+        );
+      }
     }
 
     for (const [code, type, value, minimum] of coupons) {

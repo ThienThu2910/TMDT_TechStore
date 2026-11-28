@@ -6,8 +6,9 @@
   "scripts": {
     "dev": "node --watch src/server.js",
     "start": "node src/server.js",
-    "db:setup": "node scripts/setup-db.js",
-    "db:reset": "node scripts/setup-db.js --reset"
+    "db:setup": "node scripts/setup-db.js && node src/seed.js",
+    "db:seed": "node src/seed.js",
+    "db:reset": "node scripts/setup-db.js --reset && node src/seed.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",

@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
-import { ArrowRight, ArrowUpRight, Cpu, Truck, ShieldCheck, CreditCard, Headphones, Star, Zap, GripVertical } from 'lucide-react'
+import { ArrowRight, ArrowUpRight, Cpu, Truck, ShieldCheck, CreditCard, Headphones, Star, Zap, GripVertical, SquarePen } from 'lucide-react'
 import { discountPct, shortName, vnd, type LatestReview, type Product } from '../data'
 import { EmptyState, ProductCard } from '../components'
 import { Link } from '../nav'
 import { api } from '../api'
 import { CountUp, Magnetic, Reveal, canHover, onSpot, useCountdown } from '../hooks'
 import { useStore } from '../store'
+import { ProductDrawer } from './AdminSections'
 
 const trust = [
   { i: Truck, t: 'Miễn phí vận chuyển', d: 'Đơn từ 5.000.000đ' },
@@ -23,11 +24,25 @@ const trust = [
 const DUR = 6500
 const tints = [['rgba(91,140,255,.55)', 'rgba(139,92,246,.45)'], ['rgba(255,106,61,.5)', 'rgba(139,92,246,.4)'], ['rgba(61,220,151,.4)', 'rgba(91,140,255,.45)']]
 
+function InlineProductEditor({ product, onClose }: { product: Product | null; onClose: () => void }) {
+  const { categories, brands, refreshCatalog, toast } = useStore()
+  if (!product) return null
+  const editorCategories = categories
+    .filter((category) => typeof category.id === 'number')
+    .map((category) => ({ ...category, id: category.id as number }))
+  return <ProductDrawer product={product} cats={editorCategories} brands={brands} onClose={onClose} onSaved={() => {
+    onClose()
+    toast('Đã cập nhật sản phẩm.')
+    refreshCatalog().catch(() => toast('Không tải lại được danh mục sản phẩm.', 'err'))
+  }} />
+}
+
 function Hero({ slides, total, rating }: { slides: Product[]; total: number; rating: number }) {
-  const { catName } = useStore()
+  const { catName, user } = useStore()
   const SLIDES = slides
   const [i, setI] = useState(0)
   const [paused, setPaused] = useState(false)
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null)
   const stage = useRef<HTMLDivElement>(null)
   const cur = SLIDES[i % SLIDES.length]
   const d = discountPct(cur)
@@ -73,6 +88,7 @@ function Hero({ slides, total, rating }: { slides: Product[]; total: number; rat
             ))}
             <div aria-hidden className="absolute inset-0 bg-gradient-to-t from-black/55 via-transparent to-transparent" />
           </Link>
+          {user?.role === 'admin' && <button type="button" onClick={() => setEditingProduct(cur)} className="glass absolute right-3 top-3 z-[5] inline-flex items-center gap-1.5 !rounded-full px-3 py-2 text-xs font-semibold"><SquarePen size={14} />Sửa sản phẩm banner</button>}
           <div key={'a' + i} className="hero-info glass absolute left-2 top-10 flex items-center gap-2 !rounded-2xl px-4 py-3 text-sm sm:-left-10" style={{ transform: 'translateZ(60px)' }}><Cpu size={18} className="text-lime" /><span><span className="text-ink-2">{spec[0]} </span><b className="font-semibold">{spec[1]}</b></span></div>
           {(d > 0 || cur.isNew) && (
             <div key={'b' + i} className="hero-info glass absolute right-2 top-1/3 flex items-center gap-2 !rounded-2xl px-4 py-3 text-sm sm:-right-4" style={{ transform: 'translateZ(80px)' }}>
@@ -97,6 +113,7 @@ function Hero({ slides, total, rating }: { slides: Product[]; total: number; rat
           ))}
         </div>
       </div>
+      <InlineProductEditor product={editingProduct} onClose={() => setEditingProduct(null)} />
     </section>
   )
 }
@@ -126,7 +143,7 @@ function Bento() {
   return (
     <section className="container-x section-gap">
       <Reveal><h2 className="h-section">Mua theo <span className="text-outline">danh mục</span></h2></Reveal>
-      <div className="no-scrollbar -mx-4 mt-10 flex snap-x gap-4 overflow-x-auto px-4 sm:mx-0 sm:grid sm:auto-rows-[220px] sm:grid-cols-2 sm:overflow-visible sm:px-0 lg:grid-cols-4">
+      <div className="bento-grid mt-10 grid auto-rows-[220px] grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
         {categories.map((c, i) => {
           const slug = c.slug
           const inCat = products.filter((p) => p.category === slug)
@@ -134,7 +151,7 @@ function Bento() {
           const cover = inCat[0] ? (inCat[0].images[1] ?? inCat[0].images[0]) : ''
           const big = i === 0
           return (
-            <Reveal key={slug} delay={i * 80} className={`min-w-[78%] snap-start sm:min-w-0 ${bentoLayout[i] ?? 'lg:col-span-1'}`}>
+            <Reveal key={slug} delay={i * 80} className={`min-w-0 ${bentoLayout[i] ?? 'lg:col-span-1'}`}>
               <Link to={`/products?cat=${slug}`} onMouseMove={onSpot} className="spot group relative block h-full min-h-[240px] overflow-hidden rounded-[28px] border border-line bg-surface-2">
                 {cover && <img src={cover} alt="" loading="lazy" className="absolute inset-0 h-full w-full object-cover opacity-80 transition duration-700 group-hover:scale-[1.06]" />}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
@@ -147,13 +164,13 @@ function Bento() {
             </Reveal>
           )
         })}
-        <Reveal delay={400} className="min-w-[78%] snap-start sm:col-span-2 sm:min-w-0 lg:col-span-3">
-          <Link to="/products?sale=1" className="group relative flex h-full min-h-[240px] flex-col justify-between overflow-hidden rounded-[28px] p-6 text-white sm:flex-row sm:items-end" style={{ background: 'linear-gradient(135deg, #ff6a3d, #ff3d71 70%, #8b5cf6)' }}>
-            <div>
+        <Reveal delay={400} className="min-w-0 sm:col-span-2 lg:col-span-3">
+          <Link to="/products?sale=1" className="group relative flex h-full min-h-[240px] min-w-0 flex-col justify-between overflow-hidden rounded-[28px] p-6 text-white sm:flex-row sm:items-end" style={{ background: 'linear-gradient(135deg, #ff6a3d, #ff3d71 70%, #8b5cf6)' }}>
+            <div className="min-w-0">
               <span className="eyebrow !text-white/80">Săn deal hôm nay</span>
               <div className="font-display text-3xl font-bold leading-tight tracking-tight sm:text-4xl">{maxOff > 0 ? <>Giảm đến {maxOff}%<br />{onSale} sản phẩm đang sale</> : <>Ưu đãi mỗi ngày<br />cho đơn đầu tiên</>}</div>
             </div>
-            <div className="text-right"><div className="mb-1 text-xs text-white/80">Kết thúc sau</div><div className="num rounded-2xl bg-black/25 px-4 py-2 text-3xl font-bold backdrop-blur" aria-label={`Còn ${time}`}>{time}</div></div>
+            <div className="shrink-0 text-right"><div className="mb-1 text-xs text-white/80">Kết thúc sau</div><div className="num rounded-2xl bg-black/25 px-4 py-2 text-3xl font-bold backdrop-blur" aria-label={`Còn ${time}`}>{time}</div></div>
             <ArrowUpRight size={22} className="absolute right-5 top-5 -translate-x-2 translate-y-2 opacity-0 transition duration-300 group-hover:translate-x-0 group-hover:translate-y-0 group-hover:opacity-100" />
           </Link>
         </Reveal>
@@ -189,7 +206,9 @@ function Brands() {
 }
 
 function Compare({ a, b }: { a: Product; b: Product }) {
+  const { user } = useStore()
   const [pos, setPos] = useState(50)
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null)
   const box = useRef<HTMLDivElement>(null)
   const drag = useRef(false)
   const set = (x: number) => { const r = box.current!.getBoundingClientRect(); setPos(Math.max(0, Math.min(100, ((x - r.left) / r.width) * 100))) }
@@ -198,16 +217,17 @@ function Compare({ a, b }: { a: Product; b: Product }) {
   const keys = a.specs.map((s) => s[0]).filter((k) => b.specs.some((s) => s[0] === k)).slice(0, 3)
   const rows = [...keys.map((k) => [k, spec(a, k), spec(b, k)]), ['Giá', vnd(a.price), vnd(b.price)]]
   return (
-    <section className="container-x section-gap">
-      <Reveal><h2 className="h-section max-w-2xl">So sánh <span className="text-outline">nhanh</span></h2></Reveal>
-      <div className="mt-10 grid items-center gap-8 lg:grid-cols-[1.3fr_1fr]">
+    <>
+      <section className="container-x section-gap">
+        <Reveal><h2 className="h-section max-w-2xl">So sánh <span className="text-outline">nhanh</span></h2></Reveal>
+        <div className="mt-10 grid items-center gap-8 lg:grid-cols-[1.3fr_1fr]">
         <div ref={box} className="relative aspect-[4/3] cursor-ew-resize touch-none select-none overflow-hidden rounded-[28px] border border-line"
           onPointerDown={(e) => { drag.current = true; e.currentTarget.setPointerCapture(e.pointerId); set(e.clientX) }} onPointerMove={(e) => drag.current && set(e.clientX)} onPointerUp={() => (drag.current = false)}>
           <img src={b.images[0]} alt={b.name} className="absolute inset-0 h-full w-full object-cover" draggable={false} />
           <div className="absolute inset-0" style={{ clipPath: `inset(0 ${100 - pos}% 0 0)` }}><img src={a.images[0]} alt={a.name} className="h-full w-full object-cover" draggable={false} /></div>
           <div className="absolute inset-y-0 w-0.5 bg-white" style={{ left: `${pos}%` }}><span className="absolute left-1/2 top-1/2 grid h-10 w-10 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full bg-white text-black shadow-lg"><GripVertical size={18} /></span></div>
-          <span className="glass absolute left-4 top-4 !rounded-full px-3 py-1 text-xs text-white">{shortName(a.name)}</span>
-          <span className="glass absolute right-4 top-4 !rounded-full px-3 py-1 text-xs text-white">{shortName(b.name)}</span>
+          <span className="glass absolute left-4 top-4 flex items-center gap-2 !rounded-full px-3 py-1 text-xs text-white">{shortName(a.name)}{user?.role === 'admin' && <button type="button" aria-label={`Sửa ${a.name}`} onPointerDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); setEditingProduct(a) }} className="grid h-6 w-6 place-items-center rounded-full bg-white/15 hover:bg-white/30"><SquarePen size={13} /></button>}</span>
+          <span className="glass absolute right-4 top-4 flex items-center gap-2 !rounded-full px-3 py-1 text-xs text-white">{shortName(b.name)}{user?.role === 'admin' && <button type="button" aria-label={`Sửa ${b.name}`} onPointerDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); setEditingProduct(b) }} className="grid h-6 w-6 place-items-center rounded-full bg-white/15 hover:bg-white/30"><SquarePen size={13} /></button>}</span>
           <input type="range" min={0} max={100} value={pos} onChange={(e) => setPos(+e.target.value)} aria-label="Kéo để so sánh ảnh hai sản phẩm" className="sr-only" />
         </div>
         <div className="card overflow-hidden">
@@ -219,8 +239,10 @@ function Compare({ a, b }: { a: Product; b: Product }) {
           </table>
           <div className="flex gap-2 p-4"><Link to={`/product/${a.id}`} className="btn btn-secondary btn-sm min-w-0 flex-1"><span className="truncate">Xem {a.brand}</span></Link><Link to={`/product/${b.id}`} className="btn btn-secondary btn-sm min-w-0 flex-1"><span className="truncate">Xem {b.brand}</span></Link></div>
         </div>
-      </div>
-    </section>
+        </div>
+      </section>
+      <InlineProductEditor product={editingProduct} onClose={() => setEditingProduct(null)} />
+    </>
   )
 }
 

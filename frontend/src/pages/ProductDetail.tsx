@@ -1,12 +1,13 @@
-import { useEffect, useRef, useState, type KeyboardEvent, type MouseEvent } from 'react'
+import { useEffect, useRef, useState, type KeyboardEvent } from 'react'
 import { useParams } from 'react-router-dom'
-import { ChevronLeft, ChevronRight, Minus, Plus, ShieldCheck, Truck, RotateCcw, Heart, PackageX, ShoppingBag, Star, LoaderCircle } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Minus, Plus, ShieldCheck, Truck, RotateCcw, Heart, PackageX, ShoppingBag, Star, LoaderCircle, SquarePen } from 'lucide-react'
 import { vnd, type Review } from '../data'
 import { Breadcrumb, EmptyState, PriceBlock, ProductCard, ProductRating, Rating, StockBadge } from '../components'
 import { Link, useGo } from '../nav'
 import { useStore } from '../store'
 import { api } from '../api'
 import { flyToCart } from '../hooks'
+import { ProductDrawer } from './AdminSections'
 
 /**
  * Vỏ ngoài: dùng `key={id}` để mỗi sản phẩm là một thể hiện riêng.
@@ -25,11 +26,6 @@ function Gallery({ images, name, frameRef, onIndex }: { images: string[]; name: 
   const n = images.length
   const go = (k: number) => { const el = scroller.current; if (el) el.scrollTo({ left: ((k + n) % n) * el.clientWidth, behavior: 'smooth' }) }
   const onScroll = () => { const el = scroller.current; if (!el) return; const k = Math.round(el.scrollLeft / el.clientWidth); if (k !== i) { setI(k); onIndex(k) } }
-  const zoom = (e: MouseEvent<HTMLElement>) => {
-    const r = e.currentTarget.getBoundingClientRect()
-    e.currentTarget.style.setProperty('--zx', `${((e.clientX - r.left) / r.width) * 100}%`)
-    e.currentTarget.style.setProperty('--zy', `${((e.clientY - r.top) / r.height) * 100}%`)
-  }
   const key = (e: KeyboardEvent) => { if (e.key === 'ArrowRight') { e.preventDefault(); go(i + 1) } if (e.key === 'ArrowLeft') { e.preventDefault(); go(i - 1) } }
   return (
     <div className="lg:sticky lg:top-28 lg:self-start">
@@ -37,7 +33,7 @@ function Gallery({ images, name, frameRef, onIndex }: { images: string[]; name: 
         <div ref={scroller} onScroll={onScroll} onKeyDown={key} tabIndex={0} role="group" aria-roledescription="carousel" aria-label={`Ảnh ${name}`}
           className="no-scrollbar flex snap-x snap-mandatory overflow-x-auto">
           {images.map((s, k) => (
-            <div key={s} onMouseMove={zoom} className="zoomable aspect-square w-full shrink-0 basis-full snap-center overflow-hidden" role="group" aria-roledescription="slide" aria-label={`${k + 1} / ${n}`}>
+            <div key={s} className="aspect-square w-full shrink-0 basis-full snap-center overflow-hidden" role="group" aria-roledescription="slide" aria-label={`${k + 1} / ${n}`}>
               <img src={s} alt={k === 0 ? name : `${name}, ảnh ${k + 1}`} width={900} height={900} fetchPriority={k === 0 ? 'high' : 'auto'} loading={k === 0 ? 'eager' : 'lazy'} className="h-full w-full object-cover" draggable={false} />
             </div>
           ))}
@@ -98,8 +94,9 @@ function ReviewForm({ productId, onSaved }: { productId: number; onSaved: (list:
 
 function ProductView({ id }: { id: number }) {
   const nav = useGo()
-  const { addToCart, cart, wishlist, toggleWish, products, catName } = useStore()
+  const { addToCart, cart, wishlist, toggleWish, products, categories, brands, catName, user, toast, refreshCatalog } = useStore()
   const p = products.find((x) => x.id === id)
+  const [editingProduct, setEditingProduct] = useState(false)
   const [qty, setQty] = useState(1)
   const [idx, setIdx] = useState(0)
   const [tab, setTab] = useState<'desc' | 'specs' | 'reviews'>('desc')
@@ -128,6 +125,9 @@ function ProductView({ id }: { id: number }) {
 
   if (!p) return <div className="container-x py-16"><EmptyState icon={<PackageX size={30} />} title="Sản phẩm không tồn tại." action={<Link to="/products" className="btn btn-primary">Khám phá sản phẩm</Link>} /></div>
 
+  const editorCategories = categories
+    .filter((category) => typeof category.id === 'number')
+    .map((category) => ({ ...category, id: category.id as number }))
   const inCart = cart.find((c) => c.id === p.id)?.qty ?? 0
   const over = qty + inCart > p.stock
   const wished = wishlist.includes(p.id)
@@ -141,7 +141,10 @@ function ProductView({ id }: { id: number }) {
       <div className="grid gap-10 lg:grid-cols-[55fr_45fr]">
         <Gallery images={p.images} name={p.name} frameRef={frame} onIndex={setIdx} />
         <div>
-          <div className="eyebrow">{p.brand} · {catName(p.category)}</div>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="eyebrow">{p.brand} · {catName(p.category)}</div>
+            {user?.role === 'admin' && <button type="button" className="btn btn-secondary btn-sm" onClick={() => setEditingProduct(true)}><SquarePen size={15} />Sửa sản phẩm</button>}
+          </div>
           <h1 className="mt-2 text-[clamp(1.75rem,3vw,2.25rem)] font-bold leading-tight">{p.name}</h1>
           <div className="mt-3 flex flex-wrap items-center gap-4"><ProductRating p={p} /><StockBadge stock={p.stock} /></div>
           <ul className="mt-4 flex flex-wrap gap-2" aria-label="Thông số nổi bật">
@@ -212,6 +215,11 @@ function ProductView({ id }: { id: number }) {
         <div className="min-w-0 flex-1"><div className="truncate text-sm font-semibold">{p.name}</div><div className="num text-sm font-bold text-brand-600">{vnd(p.price)}</div></div>
         <button className="btn btn-primary shrink-0" disabled={!canBuy} onClick={() => add(barThumb.current)}><ShoppingBag size={16} />{p.stock === 0 ? 'Hết hàng' : 'Thêm vào giỏ'}</button>
       </div>
+      {editingProduct && <ProductDrawer product={p} cats={editorCategories} brands={brands} onClose={() => setEditingProduct(false)} onSaved={() => {
+        setEditingProduct(false)
+        toast('Đã cập nhật sản phẩm.')
+        refreshCatalog().catch(() => toast('Không tải lại được danh mục sản phẩm.', 'err'))
+      }} />}
     </div>
   )
 }

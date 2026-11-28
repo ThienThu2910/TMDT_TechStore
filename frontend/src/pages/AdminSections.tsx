@@ -103,7 +103,7 @@ export function ProductsTab() {
   )
 }
 
-function ProductDrawer({ product, cats, brands, onClose, onSaved }: { product: Product | null; cats: Cat[]; brands: string[]; onClose: () => void; onSaved: (p: Product, isNew: boolean) => void }) {
+export function ProductDrawer({ product, cats, brands, onClose, onSaved }: { product: Product | null; cats: Cat[]; brands: string[]; onClose: () => void; onSaved: (p: Product, isNew: boolean) => void }) {
   const [f, setF] = useState<PForm>(() => (product ? fromProduct(product, cats) : emptyForm(cats)))
   const [errs, setErrs] = useState<Record<string, string>>({})
   const [apiErr, setApiErr] = useState('')

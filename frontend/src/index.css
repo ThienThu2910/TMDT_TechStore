@@ -158,16 +158,8 @@ body::after { content: ""; position: fixed; inset: 0; z-index: -1; pointer-event
   background: radial-gradient(280px circle at var(--mx, 50%) var(--my, 50%), rgba(91,140,255,.28), transparent 60%); }
 .spot:hover::before { opacity: 1; }
 
-/* tilt + viền gradient chạy quanh */
-.tilt { transition: transform .25s ease-out; will-change: transform; }
-@property --angle { syntax: '<angle>'; initial-value: 0deg; inherits: false; }
-.border-run { position: relative; }
-.border-run::before { content: ""; position: absolute; inset: -1px; border-radius: inherit; padding: 1px; pointer-events: none; z-index: 3;
-  background: conic-gradient(from var(--angle), transparent 70%, var(--accent), var(--hot), transparent);
-  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude;
-  opacity: 0; transition: opacity .3s; animation: spin 4s linear infinite; }
-.border-run:hover::before { opacity: 1; }
-@keyframes spin { to { --angle: 360deg; } }
+/* Khoảng cách hàng cho lưới danh mục; giữ các khung ảnh tách biệt ở mọi cỡ màn hình. */
+.bento-grid { column-gap: 1rem; row-gap: 1.5rem; }
 
 /* hiện dần khi cuộn */
 .reveal { opacity: 0; transform: translateY(32px); filter: blur(8px); transition: opacity .8s var(--ease), transform .8s var(--ease), filter .8s var(--ease); }
@@ -280,13 +272,6 @@ html[data-vt='theme'] .site-header { view-transition-name: none; }
 html[data-vt='theme']::view-transition-old(root), html[data-vt='theme']::view-transition-new(root) { animation: none; mix-blend-mode: normal; }
 html[data-vt='theme']::view-transition-old(root) { z-index: 1; }
 html[data-vt='theme']::view-transition-new(root) { z-index: 2; }
-
-/* zoom ảnh khi rê chuột (trang chi tiết) */
-@media (hover: hover) and (pointer: fine) {
-  .zoomable { cursor: zoom-in; }
-  .zoomable img { transition: transform .35s var(--ease); }
-  .zoomable:hover img { transform: scale(1.9); transform-origin: var(--zx, 50%) var(--zy, 50%); }
-}
 
 /* gợn sóng khi bấm (JS thêm <span class="ripple"> vào nút) */
 .ripple { position: absolute; border-radius: 50%; background: currentColor; opacity: .28; transform: scale(0); pointer-events: none; animation: ripple .65s var(--ease) forwards; }

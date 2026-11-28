@@ -7,7 +7,7 @@ import {
 } from 'lucide-react'
 import { discountPct, vnd, fold, FREE_SHIP, type Category, type Product } from './data'
 import { useStore, type CartLine } from './store'
-import { canHover, flyToCart, isPlainClick, onTilt, onTiltLeave, transitionTo, useTheme } from './hooks'
+import { canHover, flyToCart, isPlainClick, transitionTo, useTheme } from './hooks'
 
 /* Chỉ import đúng các icon dùng tới (thay cho `import * as Icons`) -> bundle nhỏ hơn rất nhiều. */
 const iconMap = { Laptop, Smartphone, Tablet, Monitor, Headphones, Package, ShoppingBag, Heart, UserRound, Sun, Moon, Clock, Search, Box } as const
@@ -467,7 +467,7 @@ export function ProductCard({ p }: { p: Product }) {
   const add = () => { if (addToCart(p.id)) flyToCart(stage.current) }
 
   return (
-    <article onMouseMove={onTilt} onMouseLeave={onTiltLeave} className="pcard tilt border-run flex h-full flex-col rounded-[28px] border border-line bg-surface">
+    <article className="pcard flex h-full flex-col rounded-[28px] border border-line bg-surface transition-[border-color,box-shadow] duration-300 hover:border-brand-600/50 hover:shadow-card-hover">
       <div ref={stage} onMouseMove={scrub} onMouseLeave={() => setV(0)} className="relative m-2 aspect-square overflow-hidden rounded-[22px]" style={{ background: 'radial-gradient(80% 80% at 50% 30%, color-mix(in srgb, var(--accent) 22%, transparent), var(--bg-2))' }}>
         <Link ref={imgLink} to={to} onClick={open} aria-label={p.name} className="absolute inset-0 block">
           <div className="float-img absolute inset-0" style={{ animationDelay: `${(p.id % 4) * -1.2}s` }}>

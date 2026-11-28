@@ -10,21 +10,11 @@ export const canHover = () =>
   window.matchMedia('(hover: hover) and (pointer: fine)').matches &&
   !prefersReducedMotion()
 
-/* ---------- con trỏ: spotlight + tilt ---------- */
+/* ---------- điểm sáng theo vị trí con trỏ ---------- */
 export const onSpot = (e: MouseEvent<HTMLElement>) => {
   const r = e.currentTarget.getBoundingClientRect()
   e.currentTarget.style.setProperty('--mx', `${e.clientX - r.left}px`)
   e.currentTarget.style.setProperty('--my', `${e.clientY - r.top}px`)
-}
-export const onTilt = (e: MouseEvent<HTMLElement>) => {
-  if (!canHover()) return
-  const r = e.currentTarget.getBoundingClientRect()
-  const x = (e.clientX - r.left) / r.width - 0.5
-  const y = (e.clientY - r.top) / r.height - 0.5
-  e.currentTarget.style.transform = `perspective(900px) rotateY(${x * 8}deg) rotateX(${-y * 8}deg) translateZ(0)`
-}
-export const onTiltLeave = (e: MouseEvent<HTMLElement>) => {
-  e.currentTarget.style.transform = 'perspective(900px) rotateX(0) rotateY(0)'
 }
 
 /* ---------- hiện dần khi cuộn ---------- */
